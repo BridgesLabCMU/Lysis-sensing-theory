@@ -1,19 +1,23 @@
-using GLMakie
+using LaTeXStrings
+using Plots
 using LinearAlgebra
 
+pgfplotsx()
+
 function main()
+	push!(PGFPlotsX.CUSTOM_PREAMBLE, "\\usepackage{sfmath}\n\\renewcommand{\\familydefault}{\\sfdefault}")
     # Define parameters
     α = 10^(-10) 
     β = 100.0
     η = 0.05
-    r = 3 
+    r = 1 
     K = 10^9
     ν = 10^(-17) 
     n = 2 
 
     # Define the range for ω and κ
-    ω_values = LinRange(0.0001, 0.3, 1000)
-    κ_values = LinRange(10^(-11), 10^(-8), 1000)
+    ω_values = LinRange(0.0001, 0.2, 100)
+    κ_values = LinRange(10^(-11), 2*10^(-9), 100)
 
     # Preallocate a matrix for the function values
     f_values = Matrix{Float64}(undef, length(ω_values), length(κ_values))
@@ -31,8 +35,7 @@ function main()
             L_star = (ν * η / ω) * I_star
 
             # Calculate the function value
-            f = (ω+V_star*α*(1-L_star^n/(L_star^n+κ^n))) / (1 - (N_star + I_star) / K)
-            f = (ω) / (1 - (N_star + I_star) / K)
+            f = (V_star*α*(1-L_star^n/(L_star^n+κ^n))) / (1 - (N_star + I_star) / K)
             if V_star .< 0
                 f = nothing
             end
@@ -47,15 +50,17 @@ function main()
     κ_values = κ_values[valid_cols]
 
     # Color the regions
-    fig = Figure(size=(5*72,3*72))
-    ax = Axis(fig[1, 1])
-    f_values_binary = f_values .< 0.5
-    hm = heatmap!(ax, ω_values, κ_values.*10^(9), f_values, colormap = :seaborn_rocket_gradient)
-    Colorbar(fig[1, 2], hm, label="Critical growth rate \n [cells/(mL*h)]")
-    ax.xlabel = "Outflow rate, ω [mL/h]"
-    ax.ylabel = "Half-max lysate, κ [μM]"
-
-    # Display the plot
-    fig
+	p = plot(size=(400,300), xtickfontsize=17,ytickfontsize=17,colorbar_tickfontsize=17,
+             xlabel=L"Outflow rate, $\omega$ [1/hr]",
+             ylabel = L"Half-max lysate, $\kappa$ [$\mu$M]", 
+             colorbar_titlefontsize=20,
+             xguidefontsize=20,
+             yguidefontsize=20,
+             guidefontsize=20,
+             xrotation=45,
+             colorbar_title = L"$r'_c(\omega, \kappa)$",
+             grid = false)
+    heatmap!(p, ω_values, κ_values.*10^(9), f_values', colormap = :seaborn_rocket_gradient)
+    savefig("Plots/rc_kappa_omega.svg")
 end
 main()
