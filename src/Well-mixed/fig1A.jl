@@ -2,23 +2,7 @@ using DifferentialEquations
 using LaTeXStrings
 using PythonCall
 using PythonPlot
-using FFTW
-using StatsBase
-using Interpolations
 sns = pyimport("seaborn")
-
-function equilibrium(values, tol=1, window=500)
-    diffs = abs.(diff(values[end-window:end]))
-    if maximum(diffs) < tol
-        return values[end]
-    else
-        # Fourier Transform to detect limit cycle
-        periodogram = abs.(fft(diffs))
-        freq_idx = argmax(periodogram[2:end]) + 1  # Skip zero-frequency component
-        period = round(Int, window / freq_idx)
-        return mean(values[end-period:end])
-    end
-end
 
 function sensitive(du, u, p, t)
     # Parameters
@@ -100,11 +84,6 @@ function main()
 
     # Sensitive plot
     t = range(0, tspan[2], length=length(sol_sensitive.u))
-	tS = sol_sensitive.t
-	S = [vec[1] for vec in sol_sensitive.u]
-	t_uniform = range(tS[1], tS[end], length=1000)
-	S_interp = LinearInterpolation(tS, S, extrapolation_bc=Flat())
-	S_uniform = S_interp.(t_uniform)
     fig, ax = pyplot.subplots()
 
     cmap = pyplot.get_cmap("Set2")
